@@ -190,11 +190,6 @@ public class RedPacketService extends AccessibilityService {
                     return;
                 }
                 performGlobalAction(GLOBAL_ACTION_BACK); // 模拟按返回键
-//                List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.wework:id/bs1");
-//                nodeInfo.recycle();
-//                for (AccessibilityNodeInfo item : list) {
-//                    item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-//                }
             } else {
                 if (!getBooleanSetting("pref_auto_open", true)) {
                     return;
@@ -236,7 +231,11 @@ public class RedPacketService extends AccessibilityService {
         String searchText = getResources().getString(R.string.open_red_packet); // 领取红包
         AccessibilityNodeInfo node = getLastRedpackageNode(rootNode, searchText);
         LogUtil.d("最新的红包=" + node);
+
         if (node != null) {
+            if (node.getText() != "红包") {
+                return;
+            }
             node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             AccessibilityNodeInfo parent = null;
             while ((parent = node.getParent()) != null) {
