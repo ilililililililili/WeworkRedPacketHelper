@@ -170,6 +170,7 @@ public class RedPacketService extends AccessibilityService {
         LogUtil.d("拆开红包 openPacket");
         final AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
+
             String haveBeenOpened = getResources().getString(R.string.red_packet_have_opened); // 手慢了，红包派完了
             String redPacketExpired = getResources().getString(R.string.red_packet_expired); // 红包已过期
             String redPackedGot = "红包已领取";
@@ -180,6 +181,8 @@ public class RedPacketService extends AccessibilityService {
             List<AccessibilityNodeInfo> resultList4 = nodeInfo.findAccessibilityNodeInfosByText(othersRedPackedGot);
             LogUtil.d("手慢了，红包派完了 resultList=" + resultList.size());
             LogUtil.d("该红包已过期 resultList2=" + resultList2.size());
+            LogUtil.d("红包已领取 resultList=" + resultList3.size());
+            LogUtil.d("对方已领取 resultList=" + resultList4.size());
             // 判断红包是否已抢完，如已经抢完则自动关闭抢红包页面，如没有抢完则自动抢红包
             if (resultList.size() > 0 || resultList2.size() > 0 || resultList3.size() > 0 || resultList4.size() > 0) { // 红包已抢完
                 LogUtil.d("红包已抢完或已失效");
@@ -207,6 +210,8 @@ public class RedPacketService extends AccessibilityService {
                             for (AccessibilityNodeInfo item : list) {
                                 item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                             }
+                        } else {
+                            LogUtil.d("open id is null");
                         }
                     }
                 }, delayMs);
@@ -217,36 +222,7 @@ public class RedPacketService extends AccessibilityService {
     private String getOpenBtnId() {
         String weworkVersion = AppUtil.getWeworkVersion(this);
         LogUtil.d("weworkVersion=" + weworkVersion);
-        if ("2.4.7".equals(weworkVersion)) {
-            return "com.tencent.wework:id/bs8";
-        } else if ("2.4.9".equals(weworkVersion)) {
-            return "com.tencent.wework:id/bv3";
-        } else if ("2.4.12".equals(weworkVersion)) {
-            return "com.tencent.wework:id/bxe";
-        } else if ("2.4.14".equals(weworkVersion)) {
-            return "com.tencent.wework:id/bxj";
-        } else if ("2.4.16".equals(weworkVersion)) {
-            return "com.tencent.wework:id/c4w";
-        } else if ("2.4.18".equals(weworkVersion)) {
-            return "com.tencent.wework:id/c6c";
-        } else if ("2.4.20".equals(weworkVersion)) {
-            return "com.tencent.wework:id/c_t";
-        } else if ("2.4.22".equals(weworkVersion)) {
-            return "com.tencent.wework:id/cdl";
-        } else if ("2.4.99".equals(weworkVersion)) {
-            return "com.tencent.wework:id/chf";
-        } else if ("2.5.0".equals(weworkVersion)) {
-            return "com.tencent.wework:id/cjj";
-        } else if ("2.5.2".equals(weworkVersion)) {
-            return "com.tencent.wework:id/cjj";
-        } else if ("2.5.8".equals(weworkVersion)) {
-            return "com.tencent.wework:id/cwf";
-        } else if ("2.7.2".equals(weworkVersion)) {
-            return "com.tencent.wework:id/d94";
-        } else if ("3.0.1".equals(weworkVersion)) {
-            return "com.tencent.wework:id/drl";
-        }
-        return null;
+        return "com.tencent.wework:id/drl";
     }
 
     /**
