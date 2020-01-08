@@ -198,18 +198,36 @@ public class RedPacketService extends AccessibilityService {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        String viewId = getOpenBtnId(); // 获取已安装版本企业微信红包开按钮的Id
-                        if (!TextUtils.isEmpty(viewId)) {
-                            List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId(viewId);
-                            nodeInfo.recycle();
-                            for (AccessibilityNodeInfo item : list) {
-                                item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            }
-                        } else {
-                            LogUtil.d("open id is null");
-                        }
+//                        String viewId = getOpenBtnId(); // 获取已安装版本企业微信红包开按钮的Id
+//                        if (!TextUtils.isEmpty(viewId)) {
+//                            List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId(viewId);
+//                            nodeInfo.recycle();
+//                            for (AccessibilityNodeInfo item : list) {
+//                                item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+//                            }
+//                        } else {
+//                            LogUtil.d("open id is null");
+//                        }
+                        handleNode(nodeInfo);
+
                     }
                 }, delayMs);
+            }
+        }
+    }
+
+    private void handleNode(AccessibilityNodeInfo node) {
+        if (node.getChildCount() > 0) {
+            for (int i = 0; i < node.getChildCount(); i++) {
+                AccessibilityNodeInfo child = node.getChild(i);
+                if (child.isClickable()) {
+                    LogUtil.d("detail child " + child);
+                    if (child.getClassName().toString().contains("ImageView")){
+                        child.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                        break;
+                    }
+                }
+                handleNode(child);
             }
         }
     }
