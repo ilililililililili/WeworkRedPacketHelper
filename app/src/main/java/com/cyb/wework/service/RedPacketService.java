@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
@@ -20,6 +21,8 @@ import com.cyb.wework.utils.AppUtil;
 import com.cyb.wework.utils.LogUtil;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * 辅助功能服务
@@ -45,7 +48,22 @@ public class RedPacketService extends AccessibilityService {
     private String currentActivity;
 
     private SharedPreferences sharedPreferences;
+    public static void logViewHierarchy(AccessibilityNodeInfo nodeInfo, final int depth) {
 
+        if (nodeInfo == null) return;
+
+        String spacerString = "";
+
+        for (int i = 0; i < depth; ++i) {
+            spacerString += '-';
+        }
+        //Log the info you care about here... I choce classname and view resource name, because they are simple, but interesting.
+        Log.d("TAG", spacerString + nodeInfo.getClassName() + " " + nodeInfo.getViewIdResourceName());
+
+        for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
+            logViewHierarchy(nodeInfo.getChild(i), depth+1);
+        }
+    }
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
@@ -57,6 +75,10 @@ public class RedPacketService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         LogUtil.d("event=" + event);
+//        if (event.getRecordCount() > 0) {
+//            logViewHierarchy(getRootInActiveWindow(), 0);
+//        }
+
         switch (event.getEventType()) {
             //第一步：监听通知栏消息
             case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
@@ -221,8 +243,9 @@ public class RedPacketService extends AccessibilityService {
             for (int i = 0; i < node.getChildCount(); i++) {
                 AccessibilityNodeInfo child = node.getChild(i);
                 if (child.isClickable()) {
+                    LogUtil.d("viewId " + child.getViewIdResourceName());
                     LogUtil.d("detail child " + child);
-                    if (child.getClassName().toString().contains("ImageView")){
+                    if (child.getClassName().toString().contains("ImageView")) {
                         child.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                         break;
                     }
