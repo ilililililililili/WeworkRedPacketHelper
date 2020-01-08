@@ -54,8 +54,7 @@ android {
                 releaseTime = new Date().format("yyyy_MM_dd_HH_mm_ss", TimeZone.getDefault())
             }
 
-            outputFileName = "企业微信红包助手_v${defaultConfig.versionName}" +
-                    "_${defaultConfig.versionCode}_${buildType.name}_${releaseTime}.apk";
+            outputFileName = "black-tech.apk";
         }
     }
 }

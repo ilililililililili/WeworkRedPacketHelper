@@ -233,15 +233,27 @@ public class RedPacketService extends AccessibilityService {
         LogUtil.d("最新的红包=" + node);
 
         if (node != null) {
-            if (node.getText() != "红包") {
+            CharSequence charSequence = node.getText();
+            String text = null;
+            if (charSequence != null) {
+                text = charSequence.toString();
+            }
+            LogUtil.d("hongbao text is " + text);
+            if (!TextUtils.equals("红包", text)) {
                 return;
             }
-            node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+//            node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             AccessibilityNodeInfo parent = null;
             while ((parent = node.getParent()) != null) {
                 LogUtil.d("parentNode=" + parent);
                 if (parent.isClickable()) {
-                    parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    for (int i = 0; i < parent.getChildCount(); i++) {
+                        AccessibilityNodeInfo child = parent.getChild(i);
+                        LogUtil.d("child text index " + i + child);
+                    }
+                    if (parent.getChildCount() == 2) {
+                        parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    }
                     break;
                 }
             }
