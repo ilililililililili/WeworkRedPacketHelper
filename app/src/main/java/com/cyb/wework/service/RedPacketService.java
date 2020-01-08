@@ -39,6 +39,8 @@ public class RedPacketService extends AccessibilityService {
      * 红包详情页面Activity类名
      */
     private static final String RedEnvelopeDetail = "com.tencent.wework.enterprise.redenvelopes.controller.RedEnvelopeDetailActivity";
+    public static final String RED_ENVELOPE_WITH_COVER = "com.tencent.wework.enterprise.redenvelopes.controller.RedEnvelopeCollectorWithCoverActivity";
+    public static final String RED_ENVELOPE_WITH_COVER_DETAIL = "com.tencent.wework.enterprise.redenvelopes.controller.RedEnvelopeDetailWithCoverActivity";
 
     private String currentActivity;
 
@@ -47,18 +49,18 @@ public class RedPacketService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        LogUtil.d( "RedPacketService onServiceConnected 企业微信红包助手已启动");
+        LogUtil.d("RedPacketService onServiceConnected 企业微信红包助手已启动");
         Toast.makeText(this, "企业微信红包助手已启动", Toast.LENGTH_SHORT).show();
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        LogUtil.d( "event=" + event);
+        LogUtil.d("event=" + event);
         switch (event.getEventType()) {
             //第一步：监听通知栏消息
             case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
-                if(getBooleanSetting("pref_watch_notification", true)){
+                if (getBooleanSetting("pref_watch_notification", true)) {
                     onNotificationStateChanged(event);
                 }
                 break;
@@ -67,34 +69,45 @@ public class RedPacketService extends AccessibilityService {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                 String activityName = event.getClassName().toString();
                 currentActivity = activityName;
-                if (RedEnvelope.equals(currentActivity)) {
+                if (checkOpenPacket()) {
                     openPacket(); // 开红包
                 }
-                LogUtil.d( "activityName:" + activityName);
+                LogUtil.d("activityName:" + activityName);
                 break;
 
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
                 String className = event.getClassName().toString();
-                LogUtil.d( "className:" + className);
+                LogUtil.d("className:" + className);
 
                 if (MessageList.equals(currentActivity)) { // 消息列表
-                    if(getBooleanSetting("pref_auto_click_msg", true)) {
+                    if (getBooleanSetting("pref_auto_click_msg", true)) {
                         queryPacket();
                     }
-                } else if (RedEnvelope.equals(currentActivity)) {
+                } else if (checkOpenPacket()) {
                     openPacket(); // 开红包
 
-                } else if (RedEnvelopeDetail.equals(currentActivity)) {
-                    if(getBooleanSetting("pref_auto_close", true)){
+                } else if (checkCloseDetail()) {
+                    if (getBooleanSetting("pref_auto_close", true)) {
                         closeRedEnvelopeDetail(); // 关闭红包详情页面
                     }
                 }
                 break;
+            default:
+                break;
         }
+    }
+
+    boolean checkOpenPacket() {
+        return RedEnvelope.equals(currentActivity) || RED_ENVELOPE_WITH_COVER.equals(currentActivity);
+    }
+
+    boolean checkCloseDetail() {
+        return RedEnvelopeDetail.equals(currentActivity) || RED_ENVELOPE_WITH_COVER_DETAIL.equals(currentActivity);
     }
 
     /**
      * 通知状态改变时，判断是否有红包消息，有则模拟点击红包消息
+     *
      * @param accessibilityEvent
      */
     private void onNotificationStateChanged(AccessibilityEvent accessibilityEvent) {
@@ -135,7 +148,7 @@ public class RedPacketService extends AccessibilityService {
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void closeRedEnvelopeDetail() {
-        LogUtil.d( "关闭红包详情 closeRedEnvelopeDetail");
+        LogUtil.d("关闭红包详情 closeRedEnvelopeDetail");
         AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
             performGlobalAction(GLOBAL_ACTION_BACK); // 模拟按返回按钮
@@ -154,19 +167,23 @@ public class RedPacketService extends AccessibilityService {
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void openPacket() {
-        LogUtil.d( "拆开红包 openPacket");
+        LogUtil.d("拆开红包 openPacket");
         final AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
             String haveBeenOpened = getResources().getString(R.string.red_packet_have_opened); // 手慢了，红包派完了
             String redPacketExpired = getResources().getString(R.string.red_packet_expired); // 红包已过期
+            String redPackedGot = "红包已领取";
+            String othersRedPackedGot = "对方已领取";
             List<AccessibilityNodeInfo> resultList = nodeInfo.findAccessibilityNodeInfosByText(haveBeenOpened);
             List<AccessibilityNodeInfo> resultList2 = nodeInfo.findAccessibilityNodeInfosByText(redPacketExpired);
-            LogUtil.d( "手慢了，红包派完了 resultList=" + resultList.size());
-            LogUtil.d( "该红包已过期 resultList2=" + resultList2.size());
+            List<AccessibilityNodeInfo> resultList3 = nodeInfo.findAccessibilityNodeInfosByText(redPackedGot);
+            List<AccessibilityNodeInfo> resultList4 = nodeInfo.findAccessibilityNodeInfosByText(othersRedPackedGot);
+            LogUtil.d("手慢了，红包派完了 resultList=" + resultList.size());
+            LogUtil.d("该红包已过期 resultList2=" + resultList2.size());
             // 判断红包是否已抢完，如已经抢完则自动关闭抢红包页面，如没有抢完则自动抢红包
-            if (resultList.size() > 0 || resultList2.size() > 0) { // 红包已抢完
-                LogUtil.d( "红包已抢完或已失效");
-                if(!getBooleanSetting("pref_auto_close", true)){
+            if (resultList.size() > 0 || resultList2.size() > 0 || resultList3.size() > 0 || resultList4.size() > 0) { // 红包已抢完
+                LogUtil.d("红包已抢完或已失效");
+                if (!getBooleanSetting("pref_auto_close", true)) {
                     return;
                 }
                 performGlobalAction(GLOBAL_ACTION_BACK); // 模拟按返回键
@@ -176,7 +193,7 @@ public class RedPacketService extends AccessibilityService {
 //                    item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
 //                }
             } else {
-                if(!getBooleanSetting("pref_auto_open", true)){
+                if (!getBooleanSetting("pref_auto_open", true)) {
                     return;
                 }
                 int delayMs = getIntegerSetting("pref_delay_ms", 0);
@@ -184,7 +201,7 @@ public class RedPacketService extends AccessibilityService {
                     @Override
                     public void run() {
                         String viewId = getOpenBtnId(); // 获取已安装版本企业微信红包开按钮的Id
-                        if(!TextUtils.isEmpty(viewId)) {
+                        if (!TextUtils.isEmpty(viewId)) {
                             List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId(viewId);
                             nodeInfo.recycle();
                             for (AccessibilityNodeInfo item : list) {
@@ -224,9 +241,9 @@ public class RedPacketService extends AccessibilityService {
             return "com.tencent.wework:id/cjj";
         } else if ("2.5.8".equals(weworkVersion)) {
             return "com.tencent.wework:id/cwf";
-        } else if("2.7.2".equals(weworkVersion)) {
+        } else if ("2.7.2".equals(weworkVersion)) {
             return "com.tencent.wework:id/d94";
-        } else if("3.0.1".equals(weworkVersion)) {
+        } else if ("3.0.1".equals(weworkVersion)) {
             return "com.tencent.wework:id/drl";
         }
         return null;
@@ -238,16 +255,16 @@ public class RedPacketService extends AccessibilityService {
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void queryPacket() {
-        LogUtil.d( "开始查找红包 queryPacket");
+        LogUtil.d("开始查找红包 queryPacket");
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
         String searchText = getResources().getString(R.string.open_red_packet); // 领取红包
         AccessibilityNodeInfo node = getLastRedpackageNode(rootNode, searchText);
-        LogUtil.d( "最新的红包=" + node);
+        LogUtil.d("最新的红包=" + node);
         if (node != null) {
             node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             AccessibilityNodeInfo parent = null;
             while ((parent = node.getParent()) != null) {
-                LogUtil.d( "parentNode=" + parent);
+                LogUtil.d("parentNode=" + parent);
                 if (parent.isClickable()) {
                     parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                     break;
@@ -258,6 +275,7 @@ public class RedPacketService extends AccessibilityService {
 
     /**
      * 查找包含指定字符串的在屏幕最下面的一个节点
+     *
      * @param rootNode
      * @param search
      * @return
@@ -286,11 +304,11 @@ public class RedPacketService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {
-        LogUtil.d( "RedPacketService onInterrupt 企业微信红包助手已停止");
+        LogUtil.d("RedPacketService onInterrupt 企业微信红包助手已停止");
     }
 
-    private boolean getBooleanSetting(String key, boolean defaultValue){
-        if(sharedPreferences != null){
+    private boolean getBooleanSetting(String key, boolean defaultValue) {
+        if (sharedPreferences != null) {
             boolean value = sharedPreferences.getBoolean(key, defaultValue);
             LogUtil.d(key + "=" + value);
             return value;
@@ -298,8 +316,8 @@ public class RedPacketService extends AccessibilityService {
         return defaultValue;
     }
 
-    private int getIntegerSetting(String key, int defaultValue){
-        if(sharedPreferences != null) {
+    private int getIntegerSetting(String key, int defaultValue) {
+        if (sharedPreferences != null) {
             String delayTime = sharedPreferences.getString(key, "" + defaultValue);
             LogUtil.d(key + "=" + delayTime);
             try {
